@@ -10,170 +10,9 @@ import sys
 import requests
 import browsercookie
 from bs4 import BeautifulSoup
-from HTMLParser import HTMLParser
+
 from Config import *
-
-
-# create a subclass and override the handler methods
-class MyHTMLParser(HTMLParser):
-	def __init__ (self):
-		
-		HTMLParser.__init__(self)
-		self.out = ''
-    
-	def handle_starttag(self, tag, attrs):
-
-		if tag in ['table','tr','td', 'html','body', 'tbody','a']:
-			
-			href =''
-			for  t, v in attrs:
-				if t == 'href':
-					href = 'href=' + v
-					 
-        		
-			self.out = self.out + '<%s %s>'% (tag, href)
-
-	def handle_endtag(self, tag):
-		if tag  in ['table','tr','td', 'html','body', 'tbody','a']: 
-        		self.out = self.out + '</%s>'% tag
-        
-    	def handle_data(self, data):
-		self.out = self.out + data
-
-
-class ArchiveGame(object):
-	@staticmethod
-	def extractTactic(tacticStr):
-		percB = tacticStr.find('(')
-		percE = tacticStr.find('%')	
-		extr = tacticStr[percB + 1 : percE]
-		if extr == '':
-			return None
-		return int(extr)
-	@staticmethod
-	def extractSchema(schemaStr):
-		return str(schemaStr.replace('-',''))
-	
-	@staticmethod
-	def extractStrength(strengthStr):
-		if strengthStr == '':
-			return None
-
-		return float(strengthStr)
-	@staticmethod
-	def extractStrategy(strategyStr):
-
-		strategyMapping = { u"нормальная": "Normal",
-				    u"игра в пас": "Passing",
-				    u"техничная игра" : "Dribbling", 
-				    u"дальние удары": "LongShots" 	
-		} 
-		return strategyMapping.get(strategyStr)
-
-	@staticmethod
-	def extractPassingStyle(passingStyleStr):
-
-		passingMapping = { u"дальние": "Long",
-				    u"смешанные": "Mixed",
-				    u"короткие" : "Short" 	
-		} 
-		return passingMapping.get(passingStyleStr)
-	
-	@staticmethod
-	def extractPressing(pressingStr):
-
-		pressingMapping = { u"нет": False,
-				    u"да":  True}
-			
-		pressEnabled = pressingMapping.get(pressingStr)
-	    	if pressEnabled == None:
-			
-			return False
-		return pressEnabled
-
-	def getStatsFor(self,userID):
-		if self.uids[0] == userID:
-			idx = 0
-		elif self.uids[1] == userID:
-			idx = 1
-		else:
-			return None
-		
-		return [ self.strength[idx], self.schema[idx], self.tactic[idx], self.pressing[idx], self.strategy[idx],self.passingStyle[idx]  ]
-			
-
-	def __init__(self, gameID):
-		req = 'http://www.11x11.ru/reports/' + gameID
-		response = GlobalData.CurrentSession.get(req)
-		parser = MyHTMLParser()
-		parser.feed(response.content)
-		
-		dom = BeautifulSoup(response.content,'html.parser')
-
-		#score
-		self.score = None
-		nodes = dom.find_all("font", attrs = {"size" : "2"} )
-		for node in nodes:
-			scoreElement = node.find('h2')
-			if scoreElement:		
-				self.score  = [ int(s) for s in scoreElement.text.split(':')]
-		
-		#user IDS
-		nodes = dom.find_all("a", href = re.compile('users') )
-		self.uids = []
-		for nd in nodes[-2:]:
-			id = nd.attrs['href'].split('/')[2]
-			self.uids.append(id)
-
-		#extract table elements
-		soup = BeautifulSoup(parser.out, 'html.parser')
-		schemaNode = soup.find("td", text = re.compile(u'схема'))
-		matchReportTable = schemaNode.find_parent('table')
-		rows = matchReportTable.findAll('tr')
-		table = []		
-		for row in rows:
-			cols = row.findAll('td')
-			table.append([cols[0].text, cols[2].text])
-	
-		self.strength =  [ArchiveGame.extractStrength(v) for v in table[2] ]  
-		self.schema =  [ArchiveGame.extractSchema(v) for v in table[3] ] 
-		self.tactic =  [ArchiveGame.extractTactic(v) for v in table[4] ]
-		self.pressing =  [ArchiveGame.extractPressing(v) for v in table[5] ]
-		self.strategy =  [ArchiveGame.extractStrategy(v) for v in table[6] ]
-		self.passingStyle =  [ArchiveGame.extractPassingStyle(v) for v in table[7] ]
-		self.gameID = gameID		
-		print self.__dict__
-		
-
-
-def getReportsForUser(user, N):
-	req  = GlobalData.ArchiveGameForUserPrefix + user
-	response = GlobalData.CurrentSession.get(req)
-	
-	parser = MyHTMLParser()
-	parser.feed(response.content)
-	soup = BeautifulSoup(parser.out, 'html.parser')
-	reportNodes = soup.find_all("a", href = re.compile('/reports/'))
-
-	reportIDs = []
-	for reportNode in reportNodes:
-		reportIDs.append(reportNode.attrs['href'].split('/')[2])
-	
-	archiveGames = []
-	for i in range(min(len(reportIDs),N) ):
-		
-		try:
-			game = ArchiveGame(reportIDs[i])
-			[strength, schema, tactic, pressing, strategy, passingStyle ] = game.getStatsFor(user)
-			if schema != None and strategy != None and tactic != None:			
-				archiveGames.append(game)
-		except:
-			pass
-			
-				
-	return archiveGames
-
-
+import GameArchive
 
 
 def findMostFrequent(hist):
@@ -245,10 +84,10 @@ def findContraTactic(tactic, schema = None):
 	return contra[tactic]
 
 def extractContraData(userID):
-	
-	reports = getReportsForUser(userID, 8)
-	
-	print(reports)
+
+	userGames  = GameArchive.UserGameArchive(userID,10)
+	userGames.fetchGames()
+	reports = userGames.games()	
 	
 	schemaHist = {} 
 	strategyHist = {}
@@ -264,10 +103,9 @@ def extractContraData(userID):
 		hist[val] = counter + 1 if counter != None else 1 
 		
 	for report in reports:
-			gameReport = report.getStatsFor(userID)
-		
+			gameReport = report.getStatsFor(userID)	
+			#self.logging.info('----- Analyzing game report ----\n %s ' % str(gameReport))
 			[strength, schema, tactic, pressing, strategy, passingStyle] = gameReport
-			print(gameReport)
 			updateHistogram(strategyHist, strategy)
 			updateHistogram(schemaHist, schema)
 			updateHistogramWithRounding(tacticHist, tactic, 5)
@@ -279,27 +117,28 @@ def extractContraData(userID):
 	strategy = findMostFrequent(strategyHist)
 	tactic = findMostFrequent(tacticHist)
 
+	
 	print('Most freq')
 	print(schema)
 	print(strategy)
 	print(tactic)
 	print('Done')
-	try:
-		contraSch = findContraSchema(schema)
-		ret =  ( contraSch, findContraStrategy(strategy), findContraTactic(tactic, contraSch) )
-		print(ret)		
-		if len([val for val in ret if val == None]) > 0:
-		 	raise Exception('Invalid data')   	
-		print('OKKKKKKKK')
-	except:
-		print 'Failed!!!!!'
-		tactic =  random.randint(10,25)
+	#try:
+	contraSch = findContraSchema(schema)
+	ret =  ( contraSch, findContraStrategy(strategy), findContraTactic(tactic, contraSch) )
+	print(ret)		
+	if len([val for val in ret if val == None]) > 0:
+		raise Exception('Invalid data')   	
+	print('OKKKKKKKK')
+	#except:
+	#	print 'Failed!!!!!'
+	#	tactic =  random.randint(10,25)
 
-		print('DSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSDSDSDS')
-		formation = random.choice(['442', '352'])
+	#	print('DSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSDSDSDS')
+	#	formation = random.choice(['442', '352'])
 
-		strategy= random.choice(['Normal','LongShots','Dribbling', 'Passing'])
-		ret = (formation, strategy, tactic)
+	#	strategy= random.choice(['Normal','LongShots','Dribbling', 'Passing'])
+	#	ret = (formation, strategy, tactic)
 
 	print (ret)
 	return ret

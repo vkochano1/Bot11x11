@@ -13,9 +13,8 @@ import browsercookie
 from Config import *
 from bs4 import BeautifulSoup
 import Config
+import logging
 
-
-blackList = [76456910]
 
 class PlayerHealthRecord(object):
 	def __init__ (self, id):
@@ -27,14 +26,12 @@ class PlayerHealthRecord(object):
 
 	def __repr__(self):
 		return str((self.id, self.stamina, self.morale, self.injury))
-
 		
 class TeamHealthState(object):
 	def __init__(self):
-
-
+		self.logger = logging.getLogger(self.__class__.__name__)
 		self.players = {}
-		g = GlobalData.CurrentSession.get('http://www.11x11.ru/xml/players/recovery.php')
+		g = GlobalData.CurrentSession.get(GlobalData.RecoveryDataSnapshot)
 		s = BeautifulSoup(g.content, 'html.parser')
 
 		allNodes = []
@@ -86,22 +83,37 @@ class TeamHealthState(object):
 			player = self.players.get(id)
 			return player.morale 
 			
-	def addStamina(self,  id, diff):
-			print('adding stamina for ' + str(id) + ' ' + str(diff))
+	def addStamina(self, id, diff):
+			self.logger.info('Increasing stamina for %s by ' %(id, str(diff) ) )						
 			player = self.players.get(id)
 			if player and diff <= self.Stamina:
-				print('Old ' + str (player.stamina))
-				player.stamina = player.stamina + diff
+								
+				newPlayerStamina = player.stamina + diff
+				self.logger.info("Old stamina for %s was %s and now it's %s" % (id
+								, str(player.stamina)
+								 ,str(newPlayerStamina) ) )
+				
+				player.stamina = newPlayerStamina
 				self.Stamina = self.Stamina - diff
+				self.logger('Physician power left %s' % str(self.Stamina))
+				
+			self.logger("Morale for %s can't be increased" % (id))
 					
 	def addMorale(self,  id, diff):
-			print('adding morale for ' + str(id) + ' ' + str(diff))
-						
+			self.logger.info('Increasing morale for %s by ' %(id, str(diff) ) )			
 			player = self.players.get(id)
-			if player and diff*10 <= self.Morale:
-				print('Old ' + str (player.morale))
-				player.morale = player.morale + diff
+			
+			if player and diff * 10 <= self.Morale:
+				
+				newPlayerMorale = player.morale + diff
+				self.logger.info("Old morale for %s was %S and now it's %s" % (id
+																		, str(player.morale)
+																		 ,str(newPlayerMorale) ) )
+				player.morale = newPlayerMorale
 				self.Morale = self.Morale - diff * 10
+				self.logger('Psychologist power left %s' % str(self.Morale))
+				
+			self.logger("Morale for %s can't be increased" % (id))
 
 
 class HealthStateChangeRequest(object):
@@ -121,7 +133,7 @@ class HealthStateChangeRequest(object):
 		self.addStats(state.Morale, state.Injury, state.Stamina, len(state.players))
 
 		
-		req  = 'http://www.11x11.ru/xml/players/recovery.php?act=select&type=players/recovery'
+		req  = GlobalData.HealRequest
 		GlobalData.CurrentSession.post(req,  files = self.requestData)
 	
 	def addPlayer(self, player):
@@ -197,8 +209,7 @@ class Positions(object):
 	def healPlayer (self, playerID, lowLimit, highLimit, maxSpend, state):
 
 			pstamina = state.getStamina(playerID)
-			
-			
+						
 			sumAdded  = 0
 			valToAdd = 10 if state.Stamina >= 10 else state.Stamina
 
@@ -213,7 +224,7 @@ class Positions(object):
 			
 			morale = state.Morale
 	
-			print ('Increasing morale', morale)
+			
 			if morale >= 30:
 				state.addMorale(playerID, 3)				
 			elif morale >= 20:				

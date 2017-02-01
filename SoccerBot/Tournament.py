@@ -12,35 +12,22 @@ import re
 
 from Config import *
 from PlayMatch import *
-import TeamPlayers
 from bs4 import BeautifulSoup
 import Recovery 
 from TournamentPosition import *
 
-
-
-class SquadSelectionTactic(object):
-
-	def __init__(self):
-		pass
-	
-	def getScoreBest(self, player, pos):
-		return TeamPlayers.PlayerEffectiveness(player, BestSkillPriority()).positionScore(pos)
-	
-	def getHealthy(self, player, pos):
-		return TeamPlayers.PlayerEffectiveness(player,TalentAndReadinessPriority()).positionScore(pos)
-				
-
-	def getSelector(self,  formPositions, stage, players):
-		print ('stage ' + str(stage))	
-		if stage < 16 :
-				return TeamPlayers.BestSquadSelector(formPositions, players, self.getScoreBest)
-		else:
-				return TeamPlayers.BestSquadSelector(formPositions, players, self.getHealthy)		
+import CombinationWalker
+import CostEvaluators
+import PlayerInfo
+import CostFunctions
+import logging
+from cookielib import logger
+import GameArchive		
 
 class Tournament(object):
 	
 	def __init__(self):
+		self.logger = logging.getLogger(self.__class__.__name__)
 		self.tournamentID = None
 		self.prevGameID  = None
 		self.currentGameID = None
@@ -61,7 +48,7 @@ class Tournament(object):
 
 		while True == self.isWaitingForTournament(response):
 			time.sleep(GlobalData.TournamentStartedCheckInterval)
-			print('.')
+			self.logger.info('Tournament %s is not started yet, waiting' % (self.tournamentID) )
 			response = GlobalData.CurrentSession.get(GlobalData.ActiveTournamentPrefix+ self.tournamentID)
 			
 	def extractTournamentId(self):
@@ -83,47 +70,32 @@ class Tournament(object):
 
 	def needSomeRest(self):
 		r = GlobalData.CurrentSession.get(GlobalData.Players)
-				
 		soup = BeautifulSoup(r.content, 'html.parser')
 		g = soup.find('tr', attrs = {'class' : 'header'})
 		colls = g.find_all('center')
-		print ('Physio ratio' + str(float(colls[5].text) / float(colls[3].text)))
+		logger.info('Current Physio is ' + str(float(colls[5].text) / float(colls[3].text)))
 		perc = 100 * float(colls[5].text) / float(colls[3].text)
-		print('Perc wait' + str(perc))
+		logger.info('Estimated time to wait %s (sec)' + str(perc))
 		return (100 - perc) * 60;
-		
 
 		
 	def isWaitingForTournament(self, response):
 		htmlDom = BeautifulSoup(response.content, 'html.parser')
 		canCancelTournament = htmlDom.find('a', href=re.compile("\/tournaments\/"+ self.tournamentID + "\/act=cancel"))	
 		canCancelTournament = htmlDom.find('a', href=re.compile("\/act=cancel"))
-		print(canCancelTournament)
 		return canCancelTournament != None 
 
 	def stillInGame(self):
-		r = GlobalData.CurrentSession.get(GlobalData.Site + '/tournaments/'+ self.tournamentID)
+		tournamentPosition = TournamentPosition(self.tournamentID)
 		
-		soup = BeautifulSoup(r.content, 'html.parser')
+		tournamentPosition.fetchLatestState()
 		
-		isInGameNode = soup.find(['b','td'], text=re.compile(ur'Вы играете в', re.UNICODE) )
-
-		if isInGameNode == None:
-			return (None, False)
-
-		if soup.find(['b','td'], text=re.compile(ur'Вы играете в финале', re.UNICODE) ):
-			return (1, False)
-
-		stage  = 1
-		try:
-			print (isInGameNode.text)
-			match = re.search('\d\/(\d+)', isInGameNode.text, re.UNICODE)
-			stage = int(match.group(1))
+		self.logger.info('Current Tournament State  \n %s' % str(tournamentPosition))
 				
-		except:
-			stage = 1
+		if tournamentPosition.stillInGame != True:
+			return (None, False)
 		
-		return (stage, False)
+		return (tournamentPosition.stage, tournamentPosition.inGroup)
 
 
 	def nextGameID(self):
@@ -147,8 +119,9 @@ class Tournament(object):
 				break
 			time.sleep(GlobalData.CheckIfOpponentIsAvailableInterval)
 			self.currentGameID = self.nextGameID()
-			print('Waiting for the opponent ' + str(stage) )
+			self.logger.info('Waiting for the opponent ' + str(stage) )
 	
+		self.logger.info('Warming up for new game (%s)' % self.currentGameID)
 		return self.currentGameID
 
 	def getOpponentID(self):
@@ -172,7 +145,9 @@ class Tournament(object):
 		report  = GlobalData.Site + '/reports/' + matchID
 		r = GlobalData.CurrentSession.get(report)		
 		soup = BeautifulSoup(r.content, 'html.parser')
-		print('Opening report' + report)		
+		tracker = GameArchive.MatchReportTracker(matchID)
+		tracker.waitUntilReportIsReady()
+				
 
 	def joinTournament(self, id):
 		reqJoin = GlobalData.ActiveTournamentPrefix+ id + '/act=join&step=1'
@@ -183,28 +158,26 @@ class Tournament(object):
 	def pickPlayers(self, formation, stage):	
 			formPositions = MatchSettings.SchemaMapping[formation]
 
-			info = TeamPlayers.PlayersInfo();
+			info = PlayerInfo.PlayerDataTable();
 
 			players = []
 			playersByRefId = {}
 
 			for playerID, playerInfo in info.playerInfoByRefId.iteritems():
-			    player = TeamPlayers.Player (playerID, info)
+			    player = PlayerInfo.Player (playerID, info)
 			    players.append(player)
 			    playersByRefId[playerID] = player
-			    print('Added ' + str(player))
+			    
+			    self.logger.info('Updated data for player: %s' % str(player.ID))
 
-			print('searching for the best combination')
-
-			print(formPositions)
-			selector = SquadSelectionTactic().getSelector(formPositions,stage, players)	
+			selector = CostFunctions.SquadSelectionTactic().getSelector(formPositions,stage, players)	
 			bestSquad  = selector.findBestCombination()
 			
-			print(bestSquad)
 			principalSquad = PrincipleSquad ()
 
 			for playerID, position in bestSquad.iteritems():
 			    principalSquad.addPlayer(playersByRefId[playerID], position)
+			
 			return principalSquad		
 
 	def needBoost(self, stage, isGroup, opponentID, players):
@@ -221,7 +194,8 @@ class Tournament(object):
 		while self.isTechnicalWorks():
 			time.sleep(GlobalData.TechnicalWorksDoneCheckInterval)
 			wasTechnical = True
-			print 'Techical works'
+			logging.info('Maintenance works are in progress, waiting')
+			
 
 
 		self.tournamentID = self.extractTournamentId()
@@ -245,10 +219,10 @@ class Tournament(object):
 			opponentID = self.getOpponentID()
 	
 			tp = TournamentPosition(self.tournamentID)
+			tp.fetchLatestState()
 			while tp.canPass(opponentID) == True:
 				time.sleep(20)
-				print('Passing the game')
-				tp = TournamentPosition(self.tournamentID)
+				tp.fetchLatestState()
 
 			res = Analyser.extractContraData(opponentID)
 			
@@ -260,7 +234,7 @@ class Tournament(object):
 			##roles
 			roles = Roles()
 			#squadPlayers = [player for pos, player in selectedSquad.aPlayers.iteritems()]
-			TeamPlayers.RoleSelector(selectedSquad.allPlayers,RolesPriority()).assignRoles(roles)
+			CostEvaluators.PlayerRoleScore(selectedSquad.allPlayers,CostFunctions.RolesPriority()).assignRoles(roles)
 
 			matchSettings = MatchSettings(formation, strategy, tactic, 'Mixed')
 			matchOrder = MatchOrder(GlobalData.UserID, self.currentGameID, matchSettings, selectedSquad, roles, None)

@@ -3,6 +3,8 @@ from PlayMatch import *
 
 from Tournament import *
 from Analyser import *
+from Session import *
+import LoggerConfig
 
 gameSession = GameSession()
 gameSession.initSession()
@@ -10,7 +12,7 @@ gameSession.initSession()
 
 
 while True:
-		try:
+		#try:
 			gameSession = GameSession()
 			gameSession.initSession()
 			ts = Tournament()
@@ -25,8 +27,8 @@ while True:
 					break
 				slpSec = ts.needSomeRest()
 				time.sleep(30)
-		except:
-			print('Exception')
-			pass			
+		#except :
+		#	print('Exception')
+		#	pass			
 
-		time.sleep(10)
+		#time.sleep(10)

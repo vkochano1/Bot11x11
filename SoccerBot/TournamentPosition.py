@@ -6,7 +6,7 @@ import re
 class TournamentPosition(object):
 
 	def canPass(self, opponentID):
-
+		return False
 		print(GlobalData.UserID)
 		if self.inGroup == True:
 			leader = self.groupStats[0]
@@ -27,14 +27,43 @@ class TournamentPosition(object):
 			return False
 		else:
 			return False
+	
+	def __str__(self):
+		sout ='' 		
+		if self.stage != None:
+			sout = "Stage = 1/%s\n" % str(self.stage)
+		
+		if self.inGroup == True:
+			sout = sout + "Playing in group\n"
+			for record in self.groupStats:
+				sout = sout + '\t|\t'.join(["%s=%s" % (k,v) for k,v in record.iteritems()])
+				sout = sout + '\n'
 				
+		return sout
+	
+	def __repr__(self):
+		return str(self)
 			
-	def __init__(self,tournamentID):
-		tournaMentView = GlobalData.CurrentSession.get(GlobalData.Site + '/tournaments/'+ tournamentID)
+		
+	def  fetchLatestState(self):	
+
+		tournaMentView = GlobalData.CurrentSession.get(GlobalData.Site + '/tournaments/'+ self.tournamentID)
 		htmlDom = BeautifulSoup(tournaMentView.content, 'html.parser')		
 		isInGameNode = htmlDom.find(['b','td'], text=re.compile(ur'Вы играете в', re.UNICODE) )
-		match = re.search('\d\/(\d+)', isInGameNode.text, re.UNICODE)
-		stage = int(match.group(1))
+		
+		self.stillInGame = isInGameNode != None
+		
+		if self.stillInGame == False:
+			return
+		
+		self.stage = 1
+		try:
+			match = re.search('\d\/(\d+)', isInGameNode.text, re.UNICODE)
+			self.stage = int(match.group(1))
+		except:
+			pass
+	
+		
 		groupTable = isInGameNode.parent.find('table')
 
 		self.groupStats = []
@@ -55,6 +84,9 @@ class TournamentPosition(object):
 					diff = 	[ int(i) for i in columns[7].text.split('-')]
 					score = int(columns[8].text)							
 					self.groupStats.append({'ID' : playerID, 'Played' : played,'Won' : won, 'Draw': draw, 'Lost' : lost, 'Diff' : diff, 'Score' : score})
-
-		print self.groupStats
-
+	
+			
+	def __init__(self, tournamentID):
+		self.tournamentID = tournamentID
+		self.inGroup = False
+		
