@@ -15,7 +15,6 @@ class SquadSelectionTactic(object):
                 
 
     def getSelector(self,  formPositions, stage, players):
-        print ('stage ' + str(stage))    
         if stage <= 16 :
                 return CombinationWalker.CombinationWalker(formPositions, players, self.getScoreBest)
         else:
@@ -90,21 +89,24 @@ class TalentAndReadinessPriority(object):
 
 class RolesPriority(object):
     def captainScore(self, player):
-        print(player.ID)
         return 10 if 'Gk' in player.Positions else 5
     
     def penaltyScore(self, player):
         if 'Gk' in player.Positions:
             return 1
         else :
-            return player.Skills['Sha']  +  player.Skills['Shs'] * 0.5
+            val = player.ExtraAbilities.get('Penalty') or 0
+	    skillBonus = val * 2
+            return player.Skills['Sha']  +  player.Skills['Shs'] * 0.5 + skillBonus
 
 
     def freeKicksScore(self, player):
         if 'Gk' in player.Positions:
             return 1
         else :
-            return player.Skills['Sha'] * 0.5 +  player.Skills['Shs'] 
+	    val = player.ExtraAbilities.get('FreeKicks') or 0
+	    skillBonus = val * 3	
+            return player.Skills['Sha'] +  player.Skills['Shs'] + player.Skills['Pas'] + skillBonus
 
 
     def leftCornersScore(self, player):
@@ -112,12 +114,16 @@ class RolesPriority(object):
             return 1
         else :
             posBonus = 10 if 'Lm' in player.Positions else 0
-            return player.Skills['Pas']  +  player.Skills['Sha'] * 0.5 + posBonus  
+	    val = player.ExtraAbilities.get('Corners') or 0
+	    skillBonus = val * 2	
+            return player.Skills['Pas']  +  player.Skills['Sha'] * 0.5 + posBonus + skillBonus  
 
     def rightCornersScore(self, player):
         if 'Gk' in player.Positions:
             return 1
         else :
             posBonus = 10 if 'Rm' in player.Positions else 0
-            return player.Skills['Pas']  +  player.Skills['Sha'] * 0.5 + posBonus  
+	    val = player.ExtraAbilities.get('Corners') or 0
+	    skillBonus = val * 2 
+            return player.Skills['Pas']  +  player.Skills['Sha'] * 0.5 + posBonus + skillBonus  
 

@@ -1,6 +1,5 @@
-import TeamPlayers
-from PlayMatch import *
 
+from PlayMatch import *
 from Tournament import *
 from Analyser import *
 from Session import *
@@ -12,14 +11,14 @@ gameSession.initSession()
 
 
 while True:
-		#try:
+		try:
 			gameSession = GameSession()
 			gameSession.initSession()
 			ts = Tournament()
 			ts.playTournament()
 
 			slpSec = ts.needSomeRest()
-			while slpSec > 580:
+			while slpSec > 500:
 				print('Left  to sleep ' + str(slpSec))
 				
 				t = ts.extractTournamentId()
@@ -27,8 +26,8 @@ while True:
 					break
 				slpSec = ts.needSomeRest()
 				time.sleep(30)
-		#except :
-		#	print('Exception')
-		#	pass			
+		except  Exception as ex:
+			print('Exception ' , ex)
+			pass			
 
-		#time.sleep(10)
+		time.sleep(10)

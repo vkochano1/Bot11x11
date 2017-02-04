@@ -25,7 +25,11 @@ class PlayerDataTable(object):
 
     def __init__(self, playerID = ''):
                 
-        response = GlobalData.CurrentSession.get(GlobalData.Site +'/xml/players/' + playerID)
+	if playerID != '': 
+		req = GlobalData.Site +'/users/' + playerID
+	else:
+		req = GlobalData.Site +'/xml/players/'
+        response = GlobalData.CurrentSession.get(req)
 	
         htmlDom = BeautifulSoup(response.content, 'html.parser')
 
@@ -101,7 +105,13 @@ class PlayerDataTable(object):
 
 	    
             self.playerInfoByRefId[refId] = info
-            
+    
+    def __str__(self):
+	       return str(self.playerInfoByRefId)
+ 
+
+    def __repr__(self):
+	       return str(self)
 
 class Player:
     SkillColumns = ['Skl' ,'Tck', 'Mrk' , 'Drb', 'Pos', 'Stm' , 'Pas', 'Shs', 'Sha' ]

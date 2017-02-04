@@ -6,8 +6,6 @@ import re
 class TournamentPosition(object):
 
 	def canPass(self, opponentID):
-		return False
-		print(GlobalData.UserID)
 		if self.inGroup == True:
 			leader = self.groupStats[0]
 			second = self.groupStats[1]

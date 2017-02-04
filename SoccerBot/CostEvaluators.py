@@ -15,7 +15,7 @@ class PlayerPositionScore(object):
         ageContribution = self.detail.ageContribution(self.player)
         moraleContribution = self.detail.moraleContribution(self.player)
         talentContribution = self.detail.talentContribution(self.player)
-        readinessEffect = self.detail.readinessEffect(self.player)
+        readinessEffect = (float) (self.detail.readinessEffect(self.player))
     
         penalty = 1.0
         
@@ -31,8 +31,8 @@ class PlayerPositionScore(object):
             for skl, val in self.player.Skills.iteritems():
                 if skl == 'Skl':
                     continue
-                    coef = table.get(skl) or 1
-                    score = score + coef * val
+                coef = table.get(skl) or 1
+                score = score + coef * val
         
 
         readiness =  (self.player.Readiness / 100.0) ** readinessEffect 
@@ -54,7 +54,6 @@ class PlayerRoleScore(object):
 
 
     def processNewScore(self, player, scoreID, allScores):
-        print(player.ID)
         newVal = self.scoreFuncMap[scoreID](player)
         if newVal > allScores[scoreID][0]:
             allScores[scoreID] = (newVal, player)

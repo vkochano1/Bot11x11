@@ -84,7 +84,7 @@ class TeamHealthState(object):
 			return player.morale 
 			
 	def addStamina(self, id, diff):
-			self.logger.info('Increasing stamina for %s by ' %(id, str(diff) ) )						
+			self.logger.info('Increasing stamina for %s by %s' %(id, str(diff) ) )						
 			player = self.players.get(id)
 			if player and diff <= self.Stamina:
 								
@@ -95,25 +95,23 @@ class TeamHealthState(object):
 				
 				player.stamina = newPlayerStamina
 				self.Stamina = self.Stamina - diff
-				self.logger('Physician power left %s' % str(self.Stamina))
+				self.logger.info('Physician power left %s' % str(self.Stamina))
 				
-			self.logger("Morale for %s can't be increased" % (id))
+			self.logger.info("Morale for %s can't be increased" % (id))
 					
 	def addMorale(self,  id, diff):
-			self.logger.info('Increasing morale for %s by ' %(id, str(diff) ) )			
+			self.logger.info('Increasing morale for %s by %s' %(id, str(diff) ) )			
 			player = self.players.get(id)
 			
 			if player and diff * 10 <= self.Morale:
 				
 				newPlayerMorale = player.morale + diff
-				self.logger.info("Old morale for %s was %S and now it's %s" % (id
-																		, str(player.morale)
-																		 ,str(newPlayerMorale) ) )
+				self.logger.info("Old morale for %s was %s and now it's %s" % (id, str(player.morale),(newPlayerMorale) ) )
 				player.morale = newPlayerMorale
 				self.Morale = self.Morale - diff * 10
-				self.logger('Psychologist power left %s' % str(self.Morale))
+				self.logger.info('Psychologist power left %s' % str(self.Morale))
 				
-			self.logger("Morale for %s can't be increased" % (id))
+			self.logger.info("Morale for %s can't be increased" % (id))
 
 
 class HealthStateChangeRequest(object):

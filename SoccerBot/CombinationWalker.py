@@ -1,5 +1,6 @@
 import itertools
 import time
+import logging
 
 class CombinationWalker(object):
     """
@@ -7,8 +8,9 @@ class CombinationWalker(object):
         the provided schema and the provided cost function
     """
     def __init__(self, schemaPositions, players, costFunc):
-        self.prepareCosts(schemaPositions, players, costFunc)
-     
+	self.logger = logging.getLogger(self.__class__.__name__)     
+	self.prepareCosts(schemaPositions, players, costFunc)
+	
     def prepareCosts(self, schemaPositions, players, costFunc):
         self.schemaPositions = []        
         self.playersByPosition = []
@@ -35,6 +37,12 @@ class CombinationWalker(object):
 
             self.playersByPosition.append(posPlayers)
 
+	forLog = {}
+	for i, positionPlayers in enumerate(self.playersByPosition):
+		position = self.schemaPositions[i][0]
+		forLog[position]  = [ (player.ID, score) for ( player, score) in positionPlayers ] 
+
+	self.logger.info('Evaluated players: %s ' % (str(forLog)))
 
     def lockPlayers(self, playersWithCalculatedScore, position, lockDict):
         aggScore = 0
@@ -54,13 +62,13 @@ class CombinationWalker(object):
     def findBestCombination(self):        
        self.bestScore = 0
        self.bestCombination = None 
-       print('------------------------- STARTED -----------------')       
+       self.logger.info('------------------------- STARTED ---------------------------')       
        start = time.time()
        usedIDs = {}
        self.findPlayerForPosition(0, usedIDs, 0)
        end = time.time()
        
-       print('------------------------- STOPPED ----------------- > ' + str(end-start) + ' seconds')
+       self.logger.info('------------------------- STOPPED (%s sec) ----------------- > ' % str(end-start))
        
        return self.bestCombination
        
@@ -69,7 +77,6 @@ class CombinationWalker(object):
             if score > self.bestScore:
                     self.bestScore = score
                     self.bestCombination = usedIDs.copy()
-                    print('changed new best' + str (self.bestCombination) + str(self.bestScore) )
             return True
         return False    
         

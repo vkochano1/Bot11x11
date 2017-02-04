@@ -73,9 +73,9 @@ class Tournament(object):
 		soup = BeautifulSoup(r.content, 'html.parser')
 		g = soup.find('tr', attrs = {'class' : 'header'})
 		colls = g.find_all('center')
-		logger.info('Current Physio is ' + str(float(colls[5].text) / float(colls[3].text)))
+		self.logger.info('Current Physio is ' + str(float(colls[5].text) / float(colls[3].text)))
 		perc = 100 * float(colls[5].text) / float(colls[3].text)
-		logger.info('Estimated time to wait %s (sec)' + str(perc))
+		self.logger.info('Estimated time to wait %s (sec)' + str(perc))
 		return (100 - perc) * 60;
 
 		
