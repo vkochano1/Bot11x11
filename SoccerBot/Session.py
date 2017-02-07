@@ -11,6 +11,7 @@ class GameSession(object):
         
     def initSession(self):
 
+        
         logon = {
                 'step' : '1',
                 'login' : '1',

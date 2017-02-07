@@ -62,22 +62,6 @@ class Tournament(object):
 		return schemaNode.text.split('/')[-1].strip(';').strip("'")
 	
 	
-	def isTechnicalWorks(self):
-		r = GlobalData.CurrentSession.get(GlobalData.Site)
-		soup = BeautifulSoup(r.content, 'html.parser')	
-		res2 = soup.find('img', src=re.compile("works.jpg"))
-		return res2 != None
-
-	def needSomeRest(self):
-		r = GlobalData.CurrentSession.get(GlobalData.Players)
-		soup = BeautifulSoup(r.content, 'html.parser')
-		g = soup.find('tr', attrs = {'class' : 'header'})
-		colls = g.find_all('center')
-		self.logger.info('Current Physio is ' + str(float(colls[5].text) / float(colls[3].text)))
-		perc = 100 * float(colls[5].text) / float(colls[3].text)
-		self.logger.info('Estimated time to wait %s (sec)' + str(perc))
-		return (100 - perc) * 60;
-
 		
 	def isWaitingForTournament(self, response):
 		htmlDom = BeautifulSoup(response.content, 'html.parser')
@@ -188,15 +172,6 @@ class Tournament(object):
 		
 	def playTournament(self):
 		random.seed(time.time())
-		wasTechnical = False
-
-		### Wait until techicals works are done
-		while self.isTechnicalWorks():
-			time.sleep(GlobalData.TechnicalWorksDoneCheckInterval)
-			wasTechnical = True
-			logging.info('Maintenance works are in progress, waiting')
-			
-
 
 		self.tournamentID = self.extractTournamentId()
 		

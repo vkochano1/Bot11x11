@@ -8,8 +8,8 @@ class CombinationWalker(object):
         the provided schema and the provided cost function
     """
     def __init__(self, schemaPositions, players, costFunc):
-	self.logger = logging.getLogger(self.__class__.__name__)     
-	self.prepareCosts(schemaPositions, players, costFunc)
+        self.logger = logging.getLogger(self.__class__.__name__)     
+        self.prepareCosts(schemaPositions, players, costFunc)
 	
     def prepareCosts(self, schemaPositions, players, costFunc):
         self.schemaPositions = []        

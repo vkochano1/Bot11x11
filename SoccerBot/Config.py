@@ -4,13 +4,17 @@ import requests
 
 class GlobalData(object):
 
-	LoginUser =  'RavenXXX'
-	LoginPassword = '19052009Vk'
+	LoginUser =  None
+	LoginPassword = None
     
 	UserID = None
 	TournamentStartedCheckInterval = 30
 	CheckIfOpponentIsAvailableInterval = 30
-	TechnicalWorksDoneCheckInterval = 0.35	
+	TechnicalWorksDoneCheckInterval = 0.35
+	
+	#recovery
+	WaitUntilNSecondsLeftToFullRecovery = 500	
+	RecoveryStateCheckInterval = 60
 
 	Site = 'http://www.11x11.ru/'
 	Players = Site + '/players/'
