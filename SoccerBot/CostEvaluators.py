@@ -21,7 +21,7 @@ class PlayerPositionScore(object):
         
         ## goalkeepers
         if self.player.Positions[0] == 'Gk' and pos == 'Gk':
-            score = self.player.Skills['Skl']
+            score = self.detail.goalKeeperScore(self.player)
         else:
             if pos not in self.player.Positions:
                 penalty = 0.7

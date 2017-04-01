@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from  Config import *
-from bs4 import BeautifulSoup
 import re
 
 class TournamentPosition(object):
 
 	def canPass(self, opponentID):
+		return False
 		if self.inGroup == True:
 			leader = self.groupStats[0]
 			second = self.groupStats[1]
@@ -45,8 +45,7 @@ class TournamentPosition(object):
 		
 	def  fetchLatestState(self):	
 
-		tournaMentView = GlobalData.CurrentSession.get(GlobalData.Site + '/tournaments/'+ self.tournamentID)
-		htmlDom = BeautifulSoup(tournaMentView.content, 'html.parser')		
+		htmlDom = GlobalData.CurrentSession.getContent(GlobalData.Site + '/tournaments/'+ self.tournamentID)
 		isInGameNode = htmlDom.find(['b','td'], text=re.compile(ur'Вы играете в', re.UNICODE) )
 		
 		self.stillInGame = isInGameNode != None

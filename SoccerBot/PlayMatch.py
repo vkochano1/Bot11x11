@@ -1,19 +1,22 @@
 # -*- coding: utf-8 -*-
 import os
-from bs4 import BeautifulSoup
 import time
 import md5
-from xml.dom import minidom
 from Config import *
 import logging
-
+from xml.dom import minidom
 
 class MatchSettings(object):
     StrategyMapping = { 'Normal' : 0, 'LongShots' : 1,  'Dribbling' : 2, 'Passing' : 3 }
     SchemaMapping =  { '442' :  ['Gk','Rd', 'Ld', 'Cd', 'Cd', 'Lm', 'Cm', 'Cm', 'Rm', 'Cf', 'Cf']
 		     , '352' :  ['Gk','Cd', 'Cd', 'Cd', 'Lm', 'Cm', 'Cm', 'Cm', 'Rm', 'Cf', 'Cf']  
 		     , '433' :  ['Gk','Ld', 'Cd', 'Cd', 'Rd', 'Lm', 'Cm', 'Rm', 'Cf', 'Cf', 'Cf']  
-  		     , '343' :  ['Gk','Cd', 'Cd', 'Cd', 'Lm', 'Cm', 'Cm', 'Rm', 'Cf', 'Cf', 'Cf']  	   
+  		     , '343' :  ['Gk','Cd', 'Cd', 'Cd', 'Lm', 'Cm', 'Cm', 'Rm', 'Cf', 'Cf', 'Cf']
+                     , '451' :  ['Gk','Ld', 'Cd', 'Cd', 'Rd', 'Lm', 'Cm', 'Cm', 'Cm', 'Rm', 'Cf']
+                     , '541' :  ['Gk','Ld', 'Cd', 'Cd', 'Cd', 'Rd', 'Lm', 'Cm', 'Cm', 'Rm', 'Cf']
+                     , '253' :  ['Gk','Cd', 'Cd', 'Lm', 'Cm', 'Cm', 'Cm', 'Rm', 'Cf', 'Cf', 'Cf']
+                     , '532' :  ['Gk','Ld', 'Cd', 'Cd', 'Cd', 'Rd', 'Lm', 'Cm', 'Rm', 'Cf', 'Cf']
+                     , '523' :  ['Gk','Ld', 'Cd', 'Cd', 'Cd', 'Rd', 'Cm', 'Cm', 'Cf', 'Cf', 'Cf']
 		     }    
     PassingStyleMapping =   {'Mixed' : 0 , 'Long' : 1,  'Short' : 2 } 
     
@@ -29,7 +32,7 @@ class MatchSettings(object):
         self.passingStyle = MatchSettings.PassingStyleMapping.get(passingStyle)
         self.premium = premium
         self.pressingEnabled = pressingEnabled
-        
+        print('ZZZZ',schema, strategy, tactic)
         if self.passingStyle == None:
             self.passingStyle = MatchSettings.PassingStyleMapping.get(MatchSettings.DefaultPassingStyle)
 

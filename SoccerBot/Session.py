@@ -26,7 +26,7 @@ class GameSession(object):
             }
         #self-register 
         self.session = requests.Session()
-        GlobalData.CurrentSession = self.session
+        GlobalData.CurrentSession = self
         
         self.logger.info('Trying to login with UserID = %s, Password = %s' 
                          % (GlobalData.LoginUser, GlobalData.LoginPassword))
@@ -34,20 +34,25 @@ class GameSession(object):
         GlobalData.CurrentSession.post(GlobalData.Site, data=logon)    
     
         GlobalData.UserID = self.findUserID()
-        
+
         self.logger.info('Successfully logged in as %s(refID) ' % GlobalData.UserID )
         
+        
     def findUserID(self):
-        response = GlobalData.CurrentSession.get(GlobalData.Site + '/index.php' )
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup = GlobalData.CurrentSession.getContent(GlobalData.Site + '/index.php' )
         userID = soup.find("u", text = re.compile('ref='))
-        extractedID = userID.text.split('=')[-1]
+        extractedID = userID.text.split('=')[-1]     
         return extractedID
                 
     def get(self, *args, **kwargs):
         kwargs['timeout'] = 15
-        self.session.get(*args, **kwargs)
-    
+        return self.session.get(*args, **kwargs)
+
+    def getContent(self, url, *args, **kwargs):
+        response = self.get(url, *args, **kwargs)
+        soup = BeautifulSoup(response.content, 'html5lib')
+        return soup
+        
     def post(self, *args, **kwargs):
         kwargs['timeout'] = 15
-        self.session.get(*args, **kwargs)
+        return self.session.post(*args, **kwargs)

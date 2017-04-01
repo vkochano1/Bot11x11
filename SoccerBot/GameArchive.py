@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-import Utils
 from Config import GlobalData
-from bs4 import BeautifulSoup
 import re
 import logging
+import time 
+import PlayerInfo
 
 class Game(object):
 
@@ -81,19 +81,20 @@ class Game(object):
         
     def __init__(self, gameID):
         req = GlobalData.Reports + '/' + gameID
-        response = GlobalData.CurrentSession.get(req)
-        parser = Utils.MyHTMLParser()
-        parser.feed(response.content)
-        self.logger = logging.getLogger(self.__class__.__name__)
-        dom = BeautifulSoup(response.content,'html.parser')
 
+        self.logger = logging.getLogger(self.__class__.__name__)
+        dom = GlobalData.CurrentSession.getContent(req)
+        self.dom = dom
         #score
         self.score = None
         nodes = dom.find_all("font", attrs = {"size" : "2"} )
         for node in nodes:
-            scoreElement = node.find('h2')
+	    if len(node.text) == 0:
+		continue
+            scoreElement = node
             if scoreElement:        
                 self.score  = [ int(s) for s in scoreElement.text.split(':')]
+        print(self.score)
         
         #user IDS
         nodes = dom.find_all("a", href = re.compile('users') )
@@ -103,8 +104,8 @@ class Game(object):
             self.uids.append(id)
 
         #extract table elements
-        soup = BeautifulSoup(parser.out, 'html.parser')
-        schemaNode = soup.find("td", text = re.compile(u'схема'))
+        soup = dom
+        schemaNode = dom.find("td", text = re.compile(u'схема'))
         matchReportTable = schemaNode.find_parent('table')
         if matchReportTable == None:
             raise Exception('No data for report', gameID)
@@ -120,10 +121,56 @@ class Game(object):
         self.pressing =  [Game.extractPressing(v) for v in table[5] ]
         self.strategy =  [Game.extractStrategy(v) for v in table[6] ]
         self.passingStyle =  [Game.extractPassingStyle(v) for v in table[7] ]
-        self.gameID = gameID        
+        self.gameID = gameID    
+            
         
+    
+class GameExtended(Game):
+    
+    def __init__(self, gameID):
+        super(GameExtended, self).__init__(gameID)
+        if self.uids[0] == '2' or self.uids[1] == '2':
+            raise Exception('Skipping bot')
         
+        if self.score[0] != self.score[1] == '2':
+            raise Exception('Skipping draw')
         
+        self.populateExtendedData(self.dom)
+        
+    def populateExtendedData(self, htmlDom):
+        
+        teamSquads = htmlDom.find_all("div", text = 'Gk')
+        
+        user1Info = PlayerInfo.PlayerDataTable(self.uids[0])
+        user2Info = PlayerInfo.PlayerDataTable(self.uids[1])
+        
+        team1ExtendedData = self.extractExendedSquadData(teamSquads[0].parent.parent.parent, user1Info)
+        team2ExtendedData = self.extractExendedSquadData(teamSquads[1].parent.parent.parent, user2Info)
+        
+        if len(team1ExtendedData) != 11 or len(team1ExtendedData) != 11:
+            raise Exception('Skipping inj/reds')
+        
+        self.extendedData = [team1ExtendedData, team2ExtendedData]
+        
+    def extractExendedSquadData(self, table, userInfo):        
+        playersParticipated = []
+        for row in table.find_all('tr'):
+            cols = row.find_all('td')
+            pos = cols[0].text
+            id = cols[1].find('a').attrs['href'].split('/')[-1]
+            score = cols[2].text
+            playersParticipated.append( ( pos, PlayerInfo.Player(id, userInfo) ))
+            
+        return playersParticipated
+    
+    def __str__(self):
+        text = super(GameExtended,self).__str__()
+        extendedTeam1 = str ([ (pos, player.ID) for pos, player in self.extendedData[0] ] )
+        extendedTeam2 = str ([ (pos, player.ID) for pos, player in self.extendedData[1] ] )
+        
+        return text + extendedTeam1 + extendedTeam2
+        
+    
 class UserGameArchive(object): 
     def __init__(self, userID, N):
         self.userID  = userID
@@ -133,10 +180,7 @@ class UserGameArchive(object):
             
     def fetchGames(self):       
         req  = GlobalData.ArchiveGameForUserPrefix +  self.userID
-        response = GlobalData.CurrentSession.get(req)
-        parser = Utils.MyHTMLParser()
-        parser.feed(response.content)
-        soup = BeautifulSoup(parser.out, 'html.parser')
+        soup = GlobalData.CurrentSession.getContent(req)
         
         reportNodes = soup.find_all("a", href = re.compile('/reports/'))
         
@@ -162,21 +206,20 @@ class UserGameArchive(object):
     def games(self):
         return self.archiveGames
     
-import time   
+  
 class MatchReportTracker(object):
     def __init__(self, gameID):
         self.gameID = gameID
-        
-    
+        self.logger = logging.getLogger(self.__class__.__name__)
+           
     def waitUntilReportIsReady(self):
         
-        for i in range(60):
+        for i in range(30):
             try:
                 game = Game(self.gameID)
-                print ('Played')
-                print(str(game))
+                self.logger.info(str(game))
                 break
             except:
                 pass
             time.sleep(5)
-            print('not ready yet')
+            self.logger.info('not ready yet')

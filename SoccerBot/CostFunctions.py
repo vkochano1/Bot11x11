@@ -1,5 +1,6 @@
 import CombinationWalker
 import CostEvaluators
+from Config import *
             
             
 class SquadSelectionTactic(object):
@@ -15,7 +16,7 @@ class SquadSelectionTactic(object):
                 
 
     def getSelector(self,  formPositions, stage, players):
-        if stage <= 16 :
+        if stage <= GlobalData.BestSquadStage :
                 return CombinationWalker.CombinationWalker(formPositions, players, self.getScoreBest)
         else:
                 return CombinationWalker.CombinationWalker(formPositions, players, self.getHealthy)
@@ -38,6 +39,9 @@ class BestSkillPriority(object):
 
     def __init__(self):
         pass
+
+    def goalKeeperScore(self, player):
+	return player.Skills['Skl']
 
     def ageContribution(self, player):
         return (40 - player.Age) * 0.5   
@@ -68,6 +72,9 @@ class TalentAndReadinessPriority(object):
     }
     def __init__(self):
         pass
+
+    def goalKeeperScore(self, player):
+	return player.Talent * (40 - player.Age)
 
     def ageContribution(self, player):
         if player.Talent <= 4:

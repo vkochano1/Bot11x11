@@ -1,6 +1,5 @@
 
 # -*- coding: utf-8 -*-
-import autopy
 import math
 import time
 import random
@@ -9,9 +8,7 @@ import random
 import os
 import sys
 import requests
-import browsercookie
 from Config import *
-from bs4 import BeautifulSoup
 import Config
 import logging
 
@@ -31,9 +28,8 @@ class TeamHealthState(object):
 	def __init__(self):
 		self.logger = logging.getLogger(self.__class__.__name__)
 		self.players = {}
-		g = GlobalData.CurrentSession.get(GlobalData.RecoveryDataSnapshot)
-		s = BeautifulSoup(g.content, 'html.parser')
-
+		s = GlobalData.CurrentSession.getContent(GlobalData.RecoveryDataSnapshot)
+		
 		allNodes = []
 		part1 = s.find_all('input', attrs = {'name' :re.compile('.*[HMI]') })
 		part2 = s.find_all('input', attrs = {'name' :re.compile('Stamina') })
@@ -149,9 +145,8 @@ class HealthStateChangeRequest(object):
 class Positions(object):
 	def __init__(self):
 
-		g = GlobalData.CurrentSession.get('http://www.11x11.ru/xml/players/')
-		s = BeautifulSoup(g.content, 'html.parser')
-
+		s = GlobalData.CurrentSession.getContent('http://www.11x11.ru/xml/players/')
+		
 		keeper = s.find('center', text = u'Gk' )
 
 		self.playersByPosition = {}

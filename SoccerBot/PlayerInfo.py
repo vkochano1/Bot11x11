@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from bs4 import BeautifulSoup
 from Config import *
 import re
 import logging
@@ -29,10 +28,8 @@ class PlayerDataTable(object):
 		req = GlobalData.Site +'/users/' + playerID
 	else:
 		req = GlobalData.Site +'/xml/players/'
-        response = GlobalData.CurrentSession.get(req)
+        htmlDom = GlobalData.CurrentSession.getContent(req)
 	
-        htmlDom = BeautifulSoup(response.content, 'html.parser')
-
         GkRecord = htmlDom.find('center', text = GlobalData.PlayerInfoLookupAnchor )
 
         table = GkRecord.parent.parent.parent
@@ -152,9 +149,8 @@ Talent        : %s
         self.Talent = playerInfo['Talent']
         self.Number = playerInfo['Number']
         self.ExtraAbilities = playerInfo['ExtraAbilities']
-        response = GlobalData.CurrentSession.get(GlobalData.Players + id)
+        htmlDOM = GlobalData.CurrentSession.getContent(GlobalData.Players + id)
         
-        htmlDOM = BeautifulSoup(response.content, 'html.parser')
         element = htmlDOM.find('u', text = re.compile(GlobalData.PlayerLookUpAnchor,re.UNICODE ))
         
         table = element.parent.parent.parent

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import autopy
 import math
 import time
 import random
@@ -7,21 +6,18 @@ import Analyser
 import Config
 import random
 import requests
-
 import re
-
 from Config import *
 from PlayMatch import *
-from bs4 import BeautifulSoup
 import Recovery 
 from TournamentPosition import *
+import Passing
 
 import CombinationWalker
 import CostEvaluators
 import PlayerInfo
 import CostFunctions
 import logging
-from cookielib import logger
 import GameArchive		
 
 class Tournament(object):
@@ -33,9 +29,7 @@ class Tournament(object):
 		self.currentGameID = None
 	
 	def populateOpenTournamentsList(self):
-		response = GlobalData.CurrentSession.get(GlobalData.TournamentsLink)
-				
-		htmlDom = BeautifulSoup(response.content, 'html.parser')
+		htmlDom = GlobalData.CurrentSession.getContent(GlobalData.TournamentsLink)
 		allTournamentLinks = htmlDom.find_all('a', href=re.compile("\/tournaments\/"))
 		tornamentIDs = []
 		for tournamnetLink in allTournamentLinks:
@@ -44,18 +38,13 @@ class Tournament(object):
 		return tornamentIDs
 
 	def waitForStart(self):		
-		response = GlobalData.CurrentSession.get(GlobalData.ActiveTournamentPrefix+ self.tournamentID)
-
-		while True == self.isWaitingForTournament(response):
+		while True == self.isWaitingForTournament():
 			time.sleep(GlobalData.TournamentStartedCheckInterval)
 			self.logger.info('Tournament %s is not started yet, waiting' % (self.tournamentID) )
-			response = GlobalData.CurrentSession.get(GlobalData.ActiveTournamentPrefix+ self.tournamentID)
 			
 	def extractTournamentId(self):
 		req  = GlobalData.Site + '/xml/games/tournaments.php'
-		r = GlobalData.CurrentSession.get(req)
-				
-		soup = BeautifulSoup(r.content, 'html.parser')
+		soup = GlobalData.CurrentSession.getContent(req)
 		schemaNode = soup.find("script", text = re.compile('document.location.href='))
 		if schemaNode == None:
 			return None
@@ -63,9 +52,8 @@ class Tournament(object):
 	
 	
 		
-	def isWaitingForTournament(self, response):
-		htmlDom = BeautifulSoup(response.content, 'html.parser')
-		canCancelTournament = htmlDom.find('a', href=re.compile("\/tournaments\/"+ self.tournamentID + "\/act=cancel"))	
+	def isWaitingForTournament(self):
+                htmlDom = GlobalData.CurrentSession.getContent(GlobalData.ActiveTournamentPrefix+ self.tournamentID)
 		canCancelTournament = htmlDom.find('a', href=re.compile("\/act=cancel"))
 		return canCancelTournament != None 
 
@@ -83,9 +71,7 @@ class Tournament(object):
 
 
 	def nextGameID(self):
-		response = GlobalData.CurrentSession.get(GlobalData.Site + '/tournaments/'+ self.tournamentID)
-		
-		soup = BeautifulSoup(response.content, 'html.parser')
+		soup = GlobalData.CurrentSession.getContent(GlobalData.Site + '/tournaments/'+ self.tournamentID)
 		gameLink = soup.find('a', href=re.compile("\/builder\/\?id="))
 		if gameLink == None:
 			return None
@@ -93,7 +79,6 @@ class Tournament(object):
 		return gameLink.attrs['href'].split('=')[-1]	
 	
 	def waitForNextGame(self):
-
 		self.currentGameID = self.nextGameID()
 
 		while self.currentGameID == None or self.prevGameID == self.currentGameID:
@@ -110,8 +95,7 @@ class Tournament(object):
 
 	def getOpponentID(self):
 		tournamentLink  = GlobalData.ActiveTournamentPrefix + self.tournamentID
-		response = GlobalData.CurrentSession.get(tournamentLink)
-		htmlDom = BeautifulSoup(response.content, 'html.parser')
+		htmlDom = GlobalData.CurrentSession.getContent(tournamentLink)
 		gameLink = htmlDom.find("a", text = re.compile(u'Перейти', re.UNICODE))
 		userNode  = gameLink.parent.parent.find("a", href = re.compile('/users/'))
 		userID = userNode.attrs['href'].split('/')[2]
@@ -127,8 +111,7 @@ class Tournament(object):
 
 	def checkReport(self, matchID):
 		report  = GlobalData.Site + '/reports/' + matchID
-		r = GlobalData.CurrentSession.get(report)		
-		soup = BeautifulSoup(r.content, 'html.parser')
+		soup = GlobalData.CurrentSession.getContent(report)		
 		tracker = GameArchive.MatchReportTracker(matchID)
 		tracker.waitUntilReportIsReady()
 				
@@ -139,7 +122,8 @@ class Tournament(object):
 		return	
 
 
-	def pickPlayers(self, formation, stage):	
+	def pickPlayers(self, formation, stage):
+                        print('picking', formation)
 			formPositions = MatchSettings.SchemaMapping[formation]
 
 			info = PlayerInfo.PlayerDataTable();
@@ -176,7 +160,6 @@ class Tournament(object):
 		self.tournamentID = self.extractTournamentId()
 		
 		if self.tournamentID == None:
-			self.needSomeRest()
 			self.tournamentID = self.joinNextToPlay()
 			self.waitForStart()	
 		else:
@@ -197,6 +180,8 @@ class Tournament(object):
 			tp.fetchLatestState()
 			while tp.canPass(opponentID) == True:
 				time.sleep(20)
+				nextOpponent = self.getOpponentID()
+				self.stillInGame()
 				tp.fetchLatestState()
 
 			res = Analyser.extractContraData(opponentID)
@@ -211,13 +196,15 @@ class Tournament(object):
 			#squadPlayers = [player for pos, player in selectedSquad.aPlayers.iteritems()]
 			CostEvaluators.PlayerRoleScore(selectedSquad.allPlayers,CostFunctions.RolesPriority()).assignRoles(roles)
 
-			matchSettings = MatchSettings(formation, strategy, tactic, 'Mixed')
+                        passingStyle = Passing.PassingStyle().getPassingStyle(formation, strategy, tactic)
+                        print(passingStyle)
+			matchSettings = MatchSettings(formation, strategy, tactic, passingStyle)
 			matchOrder = MatchOrder(GlobalData.UserID, self.currentGameID, matchSettings, selectedSquad, roles, None)
 			matchOrder.serializeOrder()
 			matchOrder.sendOrder()
 
 			self.checkReport(self.currentGameID)
-			time.sleep(60)
+			time.sleep(30)
 			self.prevGameID = self.currentGameID
 			(stage, isGroup) = self.stillInGame()
 			

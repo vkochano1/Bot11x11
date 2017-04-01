@@ -7,12 +7,12 @@ import random
 import os
 import sys
 import requests
-from bs4 import BeautifulSoup
 import PlayerInfo
 import logging
 
 from Config import *
 import GameArchive
+import Strategy
 
 
 
@@ -116,9 +116,11 @@ def extractContraData(userID):
 
 	try:
 		print schema, strategy, tactic
-		contraSch = contraData.findContraSchema(schema)
-		ret =  ( contraSch, contraData.findContraStrategy(strategy), contraData.findContraTactic(tactic, contraSch) )
-		print(ret)		
+		#contraSch = contraData.findContraSchema(schema)
+		#ret =  ( contraSch, contraData.findContraStrategy(strategy), contraData.findContraTactic(tactic, contraSch) )
+                r = Strategy.Strategy().getContraData(schema, strategy, str(tactic))
+                #adj = random.randint(0,5)
+		ret = (	r.formation, r.strategy, int(r.tactic))	
 		if len([val for val in ret if val == None]) > 0:		
 			raise Exception('Invalid data')   	
 
@@ -132,5 +134,5 @@ def extractContraData(userID):
 		strategy= random.choice(['Normal','LongShots','Dribbling', 'Passing'])
 		ret = (formation, strategy, tactic)
 
-	print (ret)
+	print ('Using', ret)
 	return ret
