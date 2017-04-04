@@ -7,7 +7,7 @@ class GlobalData(object):
 
 	LoginUser =  None
 	LoginPassword = None
-    
+        AppDir = None
 	UserID = None
 	TournamentStartedCheckInterval = 30
 	CheckIfOpponentIsAvailableInterval = 30
@@ -36,12 +36,12 @@ class GlobalData(object):
 class UserConfig(object):
         
         def save(self):
-                savePath = os.path.join('UserData', self.UserName)
+                savePath = os.path.join(GlobalData.AppDir,'UserData', self.UserName)
                 pickle.dump( self, open( savePath, "wb" ) )               
 
         @staticmethod
         def loadConfig(userName):
-                loadPath = os.path.join('UserData', userName)
+                loadPath = os.path.join(GlobalData.AppDir,'UserData', userName)
                 if os.path.exists(loadPath):
                         return pickle.load( open( loadPath, "rb" ) )
                 return None

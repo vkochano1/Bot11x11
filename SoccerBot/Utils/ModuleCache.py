@@ -1,6 +1,6 @@
 import os
 import imp
-
+from Config import *
 
 class ModuleCache (object):
 
@@ -32,7 +32,7 @@ class ModuleCache (object):
     
     def importFromURI(self, uri):
         mod = None
-        uri = os.path.normpath(os.path.join(os.path.dirname(__file__), uri))        
+        uri = os.path.join(GlobalData.AppDir, uri)      
         path, fname = os.path.split(uri)
         mname, ext = os.path.splitext(fname)
 

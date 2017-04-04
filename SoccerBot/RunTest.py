@@ -6,6 +6,8 @@ subirs = ['CostFunctions', 'Tactics', 'Config', 'Core', 'Utils']
 for d in subirs:
     sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), d ))
 
+from Config import *
+GlobalData.AppDir = os.path.abspath(os.path.dirname(__file__))
 
 from PlayMatch import *
 from Tournament import *
