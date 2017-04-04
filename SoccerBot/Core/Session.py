@@ -10,8 +10,7 @@ class GameSession(object):
         self.logger = logging.getLogger(self.__class__.__name__)
         
     def initSession(self):
-
-        
+       
         logon = {
                 'step' : '1',
                 'login' : '1',
@@ -32,8 +31,14 @@ class GameSession(object):
                          % (GlobalData.LoginUser, GlobalData.LoginPassword))
         
         GlobalData.CurrentSession.post(GlobalData.Site, data=logon)    
-    
-        GlobalData.UserID = self.findUserID()
+
+        if GlobalData.UserCfg == None:
+            ID = self.findUserID()            
+            userCfg = UserConfig(GlobalData.LoginUser,ID, GlobalData.BestSquadStage)
+            userCfg.save()
+            GlobalData.UserID = ID  
+        else :
+            GlobalData.UserID = GlobalData.UserCfg.ID
 
         self.logger.info('Successfully logged in as %s(refID) ' % GlobalData.UserID )
         

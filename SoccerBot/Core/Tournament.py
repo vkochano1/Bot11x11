@@ -11,14 +11,16 @@ from Config import *
 from PlayMatch import *
 import Recovery 
 from TournamentPosition import *
-import Passing
+#import Passing
 
 import CombinationWalker
 import CostEvaluators
 import PlayerInfo
 import CostFunctions
 import logging
-import GameArchive		
+import GameArchive
+import CostFunctionCache
+import TacticCache
 
 class Tournament(object):
 	
@@ -193,10 +195,13 @@ class Tournament(object):
 			
 			##roles
 			roles = Roles()
-			#squadPlayers = [player for pos, player in selectedSquad.aPlayers.iteritems()]
-			CostEvaluators.PlayerRoleScore(selectedSquad.allPlayers,CostFunctions.RolesPriority()).assignRoles(roles)
+			rolesCF = CostFunctionCache.GlobalCostFunctions.Roles.getCostFunction('Default') ()
+			CostEvaluators.PlayerRoleScore(selectedSquad.allPlayers, rolesCF).assignRoles(roles)
 
-                        passingStyle = Passing.PassingStyle().getPassingStyle(formation, strategy, tactic)
+                        ##passing style
+                        passingStyleCF = TacticCache.GlobalTacticCache.PassingStyle.getCostFunction('Default')
+                        passingStyle = passingStyleCF().getPassingStyle(formation, strategy, tactic)
+                        
                         print(passingStyle)
 			matchSettings = MatchSettings(formation, strategy, tactic, passingStyle)
 			matchOrder = MatchOrder(GlobalData.UserID, self.currentGameID, matchSettings, selectedSquad, roles, None)

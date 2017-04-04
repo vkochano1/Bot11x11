@@ -1,3 +1,11 @@
+import os
+import sys
+
+subirs = ['CostFunctions', 'Tactics', 'Config', 'Core', 'Utils']
+
+for d in subirs:
+    sys.path.append(os.path.join(os.path.abspath(os.path.dirname(__file__)), d ))
+
 
 from PlayMatch import *
 from Tournament import *
@@ -7,7 +15,6 @@ import LoggerConfig
 import TournamentReadiness
 import argparse
  
-import argparse
 
 parser = argparse.ArgumentParser(description='11x11 Bot')
 parser.add_argument('test')
@@ -21,6 +28,7 @@ args = parser.parse_args()
 GlobalData.LoginUser = args.user
 GlobalData.LoginPassword = args.password
 GlobalData.BestSquadStage= int(args.best_squad_stage)
+GlobalData.UserCfg = UserConfig.loadConfig(GlobalData.LoginUser)
 
 loggerConfig = LoggerConfig.LoggerConfig(args.user)
 

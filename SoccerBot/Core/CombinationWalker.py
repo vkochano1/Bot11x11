@@ -5,7 +5,7 @@ import logging
 class CombinationWalker(object):
     """
         Finds the best combination of players for 
-        the provided schema and the provided cost function
+        provided schema and provided cost function
     """
     def __init__(self, schemaPositions, players, costFunc):
         self.logger = logging.getLogger(self.__class__.__name__)     

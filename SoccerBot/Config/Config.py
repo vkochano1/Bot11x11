@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import requests
-
+import pickle
+import os
 
 class GlobalData(object):
 
@@ -28,11 +29,25 @@ class GlobalData(object):
 	HealRequest = Site + '/xml/players/recovery.php?act=select&type=players/recovery'
 	Reports = Site + '/reports/'
 	CurrenSession = None
+	UserCfg  = None
 
 
 	
+class UserConfig(object):
+        
+        def save(self):
+                savePath = os.path.join('UserData', self.UserName)
+                pickle.dump( self, open( savePath, "wb" ) )               
 
+        @staticmethod
+        def loadConfig(userName):
+                loadPath = os.path.join('UserData', userName)
+                if os.path.exists(loadPath):
+                        return pickle.load( open( loadPath, "rb" ) )
+                return None
 
-
-
+        def __init__(self, userName, ID, stage):
+                self.UserName = userName
+                self.ID = ID
+                self.Stage = stage
 	

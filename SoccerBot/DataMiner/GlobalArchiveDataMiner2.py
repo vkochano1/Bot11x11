@@ -1,3 +1,10 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)) + "/../")
+sys.path.append(os.path.abspath(os.path.dirname(__file__)) + "/../")
+sys.path.append(os.path.abspath(os.path.dirname(__file__)) + "/../CostFunctions")
+
+
 import GameArchive
 from Config import *
 import Session
@@ -23,7 +30,7 @@ def findBest(dataFrame, winnerColumns, looserColumns):
         key = GS(wrecord[0], wrecord[1], wrecord[2])
         v = idx.get(key)
                   
-        if v == None or v[1] < ratio:
+        if v == None or v[1] < ratio or (v[1]== ratio and wrecord[3]=='Mixed'):
                   idx[key] = (wrecord[3], ratio) 
 
     elements = []
@@ -35,19 +42,19 @@ def findBest(dataFrame, winnerColumns, looserColumns):
     dt = ',\n'.join(elements)
     text = """
 from collections import namedtuple
-class PassingStyle(object):
+class PassingStyleFunction(object):
     GameStrategy=namedtuple('GameStrategy', ['formation', 'strategy', 'tactic'] )
     
     Data = { %s }
     
     def getPassingStyle( self, formation, strategy, tactic ):
-        val = PassingStyle.Data.get( PassingStyle.GameStrategy(formation = formation, strategy = strategy, tactic = str(tactic) ) )
+        val = PassingStyleFunction.Data.get( PassingStyleFunction.GameStrategy(formation = formation, strategy = strategy, tactic = str(tactic) ) )
         if val == None:
             val = 'Mixed'
         return val
 """
     text = text % dt
-    f = open('Passing.py', 'w')
+    f = open('./Tactics/PassingStyle/Default.py', 'w')
     f.write(text)
     f.close()
 def genCSV():
@@ -55,7 +62,7 @@ def genCSV():
     import pandas as pd
 
 
-    with open('outdata_new.txt', 'r') as f:
+    with open('final.txt', 'r') as f:
         with open('pd2.csv','w') as o:
             enrichedOld = pickle.load( f )
             print('loaded')
@@ -97,7 +104,7 @@ def genCSV():
 
     findBest(z, [ 'form', 'strategy', 'tactic', 'pstyle'], [ 'lform', 'lstrategy', 'ltactic', 'lpstyle'])
 
-    exit(0)
+    
 
     from collections import namedtuple
     GameStrategy=namedtuple('GameStrategy', ['formation', 'strategy', 'tactic'] )
@@ -106,19 +113,19 @@ def genCSV():
     u = {}
     text = """
 from collections import namedtuple
-class Strategy(object):
+class ContraDataFunction(object):
     GameStrategy=namedtuple('GameStrategy', ['formation', 'strategy', 'tactic'] )
     
     Data = { %s }
     
     def getContraData( self, formation, strategy, tactic ):
-        val = Strategy.Data.get( Strategy.GameStrategy(formation = formation, strategy = strategy, tactic = str(tactic) ) )
+        val = ContraDataFunction.Data.get( ContraDataFunction.GameStrategy(formation = formation, strategy = strategy, tactic = str(tactic) ) )
         return val
     
 
 
 """
-    sf = open('StrategyTest.py', 'w')
+    sf = open('./Tactics/Main/Default.py', 'w')
     dd = []
     for r in z2.index.get_values():
         sub = zx.loc[r]

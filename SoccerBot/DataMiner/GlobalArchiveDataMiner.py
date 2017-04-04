@@ -1,3 +1,7 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.dirname(__file__)) + "/../")
+sys.path.append(os.path.abspath(os.path.dirname(__file__)) + "/../CostFunctions")
 import GameArchive
 from Config import *
 import Session
@@ -126,8 +130,8 @@ while True :
             enrichedOld = {}
             
         print(len(enrichedOld))
-        GlobalData.LoginUser = 'X'
-        GlobalData.LoginPassword = 'X'  
+        GlobalData.LoginUser = 'RavenXXX'
+        GlobalData.LoginPassword = 'RavenXXX1234'  
         gameSession = Session.GameSession()
         gameSession.initSession()
         arch = GlobalGameArchive()
