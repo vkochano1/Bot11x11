@@ -7,7 +7,7 @@ filesToCopy = []
 def addDataDirectory(dataDir, filesToCopy):
     filesToCopy.append((dataDir, []))
     for f in os.listdir(dataDir):
-        if os.path.splitext(f) =='.py':
+        if os.path.splitext(f)[-1] =='.py':
             filesToCopy.append( (dataDir, [os.path.join(dataDir,  f )]))
 
 DIST_DIR='C:/dist'
