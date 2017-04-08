@@ -32,7 +32,7 @@ class MatchSettings(object):
         self.passingStyle = MatchSettings.PassingStyleMapping.get(passingStyle)
         self.premium = premium
         self.pressingEnabled = pressingEnabled
-        print('ZZZZ',schema, strategy, tactic)
+        
         if self.passingStyle == None:
             self.passingStyle = MatchSettings.PassingStyleMapping.get(MatchSettings.DefaultPassingStyle)
 

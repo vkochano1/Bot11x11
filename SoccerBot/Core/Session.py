@@ -34,13 +34,11 @@ class GameSession(object):
 
         if GlobalData.UserCfg == None:
             ID = self.findUserID()            
-            userCfg = UserConfig(GlobalData.LoginUser,ID, GlobalData.BestSquadStage)
-            userCfg.save()
-            GlobalData.UserID = ID  
-        else :
-            GlobalData.UserID = GlobalData.UserCfg.ID
+            GlobalData.UserCfg = UserConfig(GlobalData.LoginUser,ID)
+            GlobalData.UserCfg.save()
 
-        self.logger.info('Successfully logged in as %s(refID) ' % GlobalData.UserID )
+
+        self.logger.info('Successfully logged in as %s(refID) ' % GlobalData.UserCfg.UserID )
         
         
     def findUserID(self):
@@ -50,7 +48,7 @@ class GameSession(object):
         return extractedID
                 
     def get(self, *args, **kwargs):
-        kwargs['timeout'] = 15
+        kwargs['timeout'] = GlobalData.RequestTimeout
         return self.session.get(*args, **kwargs)
 
     def getContent(self, url, *args, **kwargs):
@@ -59,5 +57,5 @@ class GameSession(object):
         return soup
         
     def post(self, *args, **kwargs):
-        kwargs['timeout'] = 15
+        kwargs['timeout'] = GlobalData.RequestTimeout
         return self.session.post(*args, **kwargs)

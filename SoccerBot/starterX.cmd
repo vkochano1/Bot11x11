@@ -1,0 +1,1 @@
+RunTest.exe --user=XXX --password=YYY test

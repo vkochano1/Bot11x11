@@ -226,23 +226,10 @@ class Positions(object):
 				state.addMorale(playerID, 1)		
 	  	
 	def healPlayers(self, state, blackList, priority):
-		self.healPosition('Gk', 75, 96, 20, state, blackList)
-		self.healPosition('Cf', 75, 90, 20, state, blackList)
-		self.healPosition('Cd', 75, 85, 20,state, blackList)
-		self.healPosition('Cm', 75, 85, 20,state, blackList)
+                for pos, low, high, maxToSpend in GlobalData.UserCfg.HealPlayersTactic:
+                        self.healPosition(pos, low, high, maxToSpend, state, blackList)
 
-'''from collections import namedtuple
-class RecoveryCostFunction(object):
-        
-        RecoveryRecord = namedtuple('RecoveryRecord', 'Position PlayerID Low High Step')
-                
-        def __init__(self):
-                self.Config = [
-                     RecoveryRecord(Position = 'Gk', PlayerID = None, Low = 75, High=96, Step=20)
-                     RecoveryRecord(Position = 'Cf', PlayerID = None, Low = 75, High=96, Step=10)                    
-                ]
-        
-'''
+
 def  healPlayers():
 	try:
 		state = TeamHealthState()

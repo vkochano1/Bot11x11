@@ -17,7 +17,7 @@ class SquadCostFunction(object):
         pass
 
     def goalKeeperScore(self, player):
-	return player.Skills['Skl']
+        return player.Skills['Skl']
 
     def ageContribution(self, player):
         return (40 - player.Age) * 0.5   

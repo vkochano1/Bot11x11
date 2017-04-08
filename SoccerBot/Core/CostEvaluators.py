@@ -1,4 +1,7 @@
-
+import CombinationWalker
+import CostEvaluators
+from Config import *
+import CostFunctionCache 
 
 
 class PlayerPositionScore(object):
@@ -6,8 +9,7 @@ class PlayerPositionScore(object):
     def __init__(self, player, detail):
         self.player = player
         self.detail = detail
-        
-    
+          
     def positionScore(self, pos):
         score = 0
         table = None
@@ -76,3 +78,16 @@ class PlayerRoleScore(object):
 
         for scoreID , (score, player) in bestScores.iteritems():
             roles.__dict__[scoreID] = player
+
+                   
+class SquadSelectionTactic(object):
+    def __init__(self):
+        self.data = []
+        for stage, name in GlobalData.UserCfg.PickSquadStrategy:
+            cf = CostFunctionCache.GlobalCostFunctions.Squad.getCostFunction(name)
+            self.data.append( ( stage, lambda player, pos : CostEvaluators.PlayerPositionScore(player,cf()).positionScore(pos) ) )
+                
+    def getSelector(self,  formPositions, stage, players):
+        for cfgStage, f in self.data:            
+            if stage > cfgStage :
+                return CombinationWalker.CombinationWalker(formPositions, players, f)

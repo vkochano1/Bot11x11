@@ -11,7 +11,6 @@ from Config import *
 from PlayMatch import *
 import Recovery 
 from TournamentPosition import *
-#import Passing
 
 import CombinationWalker
 import CostEvaluators
@@ -21,6 +20,7 @@ import logging
 import GameArchive
 import CostFunctionCache
 import TacticCache
+import TournamentSelector
 
 class Tournament(object):
 	
@@ -30,18 +30,9 @@ class Tournament(object):
 		self.prevGameID  = None
 		self.currentGameID = None
 	
-	def populateOpenTournamentsList(self):
-		htmlDom = GlobalData.CurrentSession.getContent(GlobalData.TournamentsLink)
-		allTournamentLinks = htmlDom.find_all('a', href=re.compile("\/tournaments\/"))
-		tornamentIDs = []
-		for tournamnetLink in allTournamentLinks:
-			id = tournamnetLink.attrs['href'].split('/')[2]
-			tornamentIDs.append(id)
-		return tornamentIDs
-
 	def waitForStart(self):		
 		while True == self.isWaitingForTournament():
-			time.sleep(GlobalData.TournamentStartedCheckInterval)
+			time.sleep(GlobalData.UserCfg.TournamentStartedCheckInterval)
 			self.logger.info('Tournament %s is not started yet, waiting' % (self.tournamentID) )
 			
 	def extractTournamentId(self):
@@ -51,21 +42,16 @@ class Tournament(object):
 		if schemaNode == None:
 			return None
 		return schemaNode.text.split('/')[-1].strip(';').strip("'")
-	
-	
 		
 	def isWaitingForTournament(self):
-                htmlDom = GlobalData.CurrentSession.getContent(GlobalData.ActiveTournamentPrefix+ self.tournamentID)
+		htmlDom = GlobalData.CurrentSession.getContent(GlobalData.ActiveTournamentPrefix + self.tournamentID)
 		canCancelTournament = htmlDom.find('a', href=re.compile("\/act=cancel"))
 		return canCancelTournament != None 
 
 	def stillInGame(self):
-		tournamentPosition = TournamentPosition(self.tournamentID)
-		
-		tournamentPosition.fetchLatestState()
-		
-		self.logger.info('Current Tournament State  \n %s' % str(tournamentPosition))
-				
+		tournamentPosition = TournamentPosition(self.tournamentID)	
+		tournamentPosition.fetchLatestState()		
+		self.logger.info('Current Tournament State  \n %s' % str(tournamentPosition))			
 		if tournamentPosition.stillInGame != True:
 			return (None, False)
 		
@@ -88,7 +74,7 @@ class Tournament(object):
 			if stage == None:
 				self.currentGameID = None
 				break
-			time.sleep(GlobalData.CheckIfOpponentIsAvailableInterval)
+			time.sleep(GlobalData.UserCfg.CheckIfOpponentIsAvailableInterval)
 			self.currentGameID = self.nextGameID()
 			self.logger.info('Waiting for the opponent ' + str(stage) )
 	
@@ -104,12 +90,11 @@ class Tournament(object):
 		return userID
 	
 	def joinNextToPlay(self):
-		tournaments = self.populateOpenTournamentsList()
-		if len(tournaments) == 0:
-			return None
-		firstTournament = tournaments[0]	
-		self.joinTournament(firstTournament)
-		return firstTournament
+		tournament = TournamentSelector.TournamentSelector().selectTournament()
+		if tournament == None:
+			return None	
+		self.joinTournament(tournament)
+		return tournament
 
 	def checkReport(self, matchID):
 		report  = GlobalData.Site + '/reports/' + matchID
@@ -123,13 +108,10 @@ class Tournament(object):
 		r = GlobalData.CurrentSession.get(reqJoin)
 		return	
 
-
 	def pickPlayers(self, formation, stage):
-                        print('picking', formation)
 			formPositions = MatchSettings.SchemaMapping[formation]
 
 			info = PlayerInfo.PlayerDataTable();
-
 			players = []
 			playersByRefId = {}
 
@@ -151,9 +133,6 @@ class Tournament(object):
 			return principalSquad		
 
 	def needBoost(self, stage, isGroup, opponentID, players):
-		#if stage <= 2:
-		#	GlobalData.CurrentSession.get('http://11x11.ru/xml/players/practice.php?activate=1')
-		#if stage <= 16:
 		Recovery.healSquadPlayers(players)
 		
 	def playTournament(self):
@@ -195,16 +174,15 @@ class Tournament(object):
 			
 			##roles
 			roles = Roles()
-			rolesCF = CostFunctionCache.GlobalCostFunctions.Roles.getCostFunction('Default') ()
-			CostEvaluators.PlayerRoleScore(selectedSquad.allPlayers, rolesCF).assignRoles(roles)
+			rolesCF = CostFunctionCache.GlobalCostFunctions.Roles.getCostFunction(GlobalData.UserCfg.RolesAssignment)
+			CostEvaluators.PlayerRoleScore(selectedSquad.allPlayers, rolesCF()).assignRoles(roles)
 
-                        ##passing style
-                        passingStyleCF = TacticCache.GlobalTacticCache.PassingStyle.getCostFunction('Default')
-                        passingStyle = passingStyleCF().getPassingStyle(formation, strategy, tactic)
+            ##passing style
+			passingStyleCF = TacticCache.GlobalTacticCache.PassingStyle.getCostFunction(GlobalData.UserCfg.PassingStyle)
+			passingStyle = passingStyleCF().getPassingStyle(formation, strategy, tactic)
                         
-                        print(passingStyle)
 			matchSettings = MatchSettings(formation, strategy, tactic, passingStyle)
-			matchOrder = MatchOrder(GlobalData.UserID, self.currentGameID, matchSettings, selectedSquad, roles, None)
+			matchOrder = MatchOrder(GlobalData.UserCfg.UserID, self.currentGameID, matchSettings, selectedSquad, roles, None)
 			matchOrder.serializeOrder()
 			matchOrder.sendOrder()
 

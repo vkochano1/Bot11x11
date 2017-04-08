@@ -34,7 +34,7 @@ def extractContraData(userID):
 		opponentInfo = PlayerInfo.PlayerDataTable(userID)
 		logging.info('Opponent team %s' % str(opponentInfo))
 
-	userGames  = GameArchive.UserGameArchive(userID,15)
+	userGames  = GameArchive.UserGameArchive(userID,GlobalData.UserCfg.AnalyseNOpponentReports)
 	userGames.fetchGames()
 	reports = userGames.games()	
 	
@@ -51,7 +51,6 @@ def extractContraData(userID):
 		counter = hist.get(val)
 		hist[val] = counter + 1 if counter != None else 1 
 	
-	print('All reports', len (reports))
 	for report in reports:
 			gameReport = report.getStatsFor(userID)	
 			[strength, schema, tactic, pressing, strategy, passingStyle] = gameReport
@@ -69,10 +68,9 @@ def extractContraData(userID):
 	try:
 		print schema, strategy, tactic
 		
-		tacticCF = TacticCache.GlobalTacticCache.Main.getCostFunction('Default')
-
+		tacticCF = TacticCache.GlobalTacticCache.Main.getCostFunction(GlobalData.UserCfg.GameTactic)
 		r = tacticCF().getContraData(schema, strategy, str(tactic))
-		#r = Strategy.Strategy().getContraData(schema, strategy, str(tactic))
+
                 ret = (	r.formation, r.strategy, int(r.tactic))	
 		if len([val for val in ret if val == None]) > 0:		
 			raise Exception('Invalid data')   	
@@ -80,9 +78,7 @@ def extractContraData(userID):
 	except Exception as ex:
 		print 'Failed!!!!!' + str (ex)
 		tactic =  random.randint(10,25)
-
 		formation = random.choice(['442', '352'])
-
 		strategy= random.choice(['Normal','LongShots','Dribbling', 'Passing'])
 		ret = (formation, strategy, tactic)
 

@@ -25,29 +25,27 @@ class TournamentReadiness(object):
     
     
     def waitUntilReady(self):
-            try :            
-                ### Wait until technical works are done
-                wasTechnical = False
-                while self.isTechnicalWorks():
-                    time.sleep(GlobalData.TechnicalWorksDoneCheckInterval)
-                    wasTechnical = True
-                    logging.info('Maintenance works are in progress, waiting')
-                
-                if wasTechnical == True:
-                    return True
-                    
-                slpSec = self.needSomeRest()
-                while  slpSec > GlobalData.WaitUntilNSecondsLeftToFullRecovery:
-                    self.logger.info('Left  to sleep ' + str(slpSec))
-                                    
-                    tournamentID  = Tournament.Tournament().extractTournamentId()
-                    if tournamentID != None:
-                        break
-                                       
-                    slpSec = self.needSomeRest()
-                    time.sleep(GlobalData.RecoveryStateCheckInterval)
-            except Exception as ex:
-                print ex
-                return False
+        try :            
+            ### Wait until technical works are done
+            wasTechnical = False
+            while self.isTechnicalWorks():
+                time.sleep(GlobalData.UserCfg.TechnicalWorksDoneCheckInterval)
+                wasTechnical = True
+                logging.info('Maintenance works are in progress, waiting')
             
-            return True
+            if wasTechnical == True:
+                return True
+                
+            slpSec = self.needSomeRest()
+            while  slpSec > GlobalData.UserCfg.WaitUntilNSecondsLeftToFullRecovery:
+                self.logger.info('Left  to sleep ' + str(slpSec))                                    
+                tournamentID  = Tournament.Tournament().extractTournamentId()
+                if tournamentID != None:
+                    break                                     
+                slpSec = self.needSomeRest()
+                time.sleep(GlobalData.UserCfg.RecoveryStateCheckInterval)
+        except Exception as ex:
+            print ex
+            return False
+        
+        return True
