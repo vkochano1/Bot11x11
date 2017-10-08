@@ -94,7 +94,6 @@ class Game(object):
             scoreElement = node
             if scoreElement:        
                 self.score  = [ int(s) for s in scoreElement.text.split(':')]
-        print(self.score)
         
         #user IDS
         nodes = dom.find_all("a", href = re.compile('users') )
@@ -198,7 +197,7 @@ class UserGameArchive(object):
                     self.logger.info('Extracted game \n%s' % str(game))            
                     self.archiveGames.append(game)
             except Exception as ex:
-                print (ex)
+                print ('Failed to extract data for repportID=%s' % str(reportIDs[i]))
                 pass
             
         return self.archiveGames

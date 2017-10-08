@@ -17,15 +17,24 @@ class CombinationWalker(object):
         self.costFunc = costFunc
         
         #filter players who can participate in next game
-        self.players = [player for player in players if player.AllowedToPlay == True ]
+        allPlayers = [player for player in players if player.AllowedToPlay == True ]
+
+        #field players
+        self.keepers = [ player for player in allPlayers if player.Positions[0] == 'Gk' ]
+
+        #goalkeepers
+        self.players = [ player for player in allPlayers if player.Positions[0] != 'Gk' ]
         
         #position histogram
         tmp = {}
         for pos in schemaPositions:
-            tmp[pos] = (tmp.get(pos) or 0) + 1
+            if pos != 'Gk':
+                tmp[pos] = (tmp.get(pos) or 0) + 1
 
         for position, requiredNbrOfPlayers in tmp.iteritems():
             self.schemaPositions.append((position,requiredNbrOfPlayers))
+
+        
 
         #populate cost
         for position, numPlayers in self.schemaPositions:
@@ -34,6 +43,18 @@ class CombinationWalker(object):
                 if position in player.Positions:                             
                       score = self.costFunc(player, position)
                       posPlayers.append( (player, score) )
+
+                      ## Don't need more than numPlayers * 2 players for each position
+                      if len(posPlayers) > numPlayers * 2:
+                          idx = 0
+                          worstIdx = 0
+                          worstScore = None
+                          for p, s in posPlayers:
+                              if worstScore == None or s < worstScore:
+                                  worstScore = s
+                                  worstIdx = idx
+                              idx = idx + 1
+                          del posPlayers[worstIdx]
 
             self.playersByPosition.append(posPlayers)
 
@@ -64,8 +85,22 @@ class CombinationWalker(object):
        self.bestCombination = None 
        self.logger.info('------------------------- STARTED ---------------------------')       
        start = time.time()
+
+       #find the best keeper
+       bestKeeperScore = 0
+       bestKeeper = None
+       for keeper in self.keepers:
+            score = self.costFunc(keeper, 'Gk')
+            if score > bestKeeperScore:
+                bestKeeperScore = score
+                bestKeeper = keeper
+
        usedIDs = {}
        self.findPlayerForPosition(0, usedIDs, 0)
+
+       if self.bestCombination != None:
+           self.bestCombination[ bestKeeper.ID] = 'Gk'
+       
        end = time.time()
        
        self.logger.info('------------------------- STOPPED (%s sec) ----------------- > ' % str(end-start))

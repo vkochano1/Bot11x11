@@ -35,11 +35,16 @@ class PlayerPositionScore(object):
                     continue
                 coef = table.get(skl) or 1
                 score = score + coef * val
-        
 
-        readiness =  (self.player.Readiness / 100.0) ** readinessEffect 
-            
-        return (score + ageContribution + moraleContribution)  * (readiness) * penalty  +  talentContribution
+        readinessPenaltyCoef = 1.0
+        if self.player.Readiness <= 50:
+            readinessPenaltyCoef  = 0.33
+        
+        readiness =  (self.player.Readiness  / 100.0) ** readinessEffect 
+
+        tmp = (score + ageContribution + moraleContribution)  * (readiness) * penalty  +  talentContribution
+        result = tmp * readinessPenaltyCoef 
+        return result
         
 
 class PlayerRoleScore(object):
@@ -83,11 +88,23 @@ class PlayerRoleScore(object):
 class SquadSelectionTactic(object):
     def __init__(self):
         self.data = []
+        self.mapping = {}
+        
         for stage, name in GlobalData.UserCfg.PickSquadStrategy:
             cf = CostFunctionCache.GlobalCostFunctions.Squad.getCostFunction(name)
-            self.data.append( ( stage, lambda player, pos : CostEvaluators.PlayerPositionScore(player,cf()).positionScore(pos) ) )
-                
+            self.mapping[name] = cf
+            self.data.append( ( stage, name ) )
+            
+    class CallHelper(object):
+        def __init__(self, cf):
+                self.cf= cf
+
+        def __call__(self, player, pos):
+                return CostEvaluators.PlayerPositionScore(player,self.cf()).positionScore(pos)
+            
+            
     def getSelector(self,  formPositions, stage, players):
-        for cfgStage, f in self.data:            
+        for cfgStage, name in self.data:
+            print stage, cfgStage, name
             if stage > cfgStage :
-                return CombinationWalker.CombinationWalker(formPositions, players, f)
+                return CombinationWalker.CombinationWalker(formPositions, players, SquadSelectionTactic.CallHelper(self.mapping[name]))

@@ -7,7 +7,15 @@ import logging
 class TournamentSelector(object):
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__name__)
-    
+
+    def firstTournament(self):
+        htmlDom = GlobalData.CurrentSession.getContent(GlobalData.TournamentsLink)
+        tournamnetLink = htmlDom.find('a', href=re.compile("tournaments.php\?id="))
+        if tournamnetLink == None:
+            return None
+        id = tournamnetLink.attrs['href'].split('=')[-1]
+        return id
+
     def populateOpenTournamentsList(self, tournamentsLink):
         htmlDom = GlobalData.CurrentSession.getContent(tournamentsLink)
         #print htmlDom

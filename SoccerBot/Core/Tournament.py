@@ -15,7 +15,6 @@ from TournamentPosition import *
 import CombinationWalker
 import CostEvaluators
 import PlayerInfo
-import CostFunctions
 import logging
 import GameArchive
 import CostFunctionCache
@@ -122,7 +121,7 @@ class Tournament(object):
 			    
 			    self.logger.info('Updated data for player: %s' % str(player.ID))
 
-			selector = CostFunctions.SquadSelectionTactic().getSelector(formPositions,stage, players)	
+			selector = CostEvaluators.SquadSelectionTactic().getSelector(formPositions,stage, players)	
 			bestSquad  = selector.findBestCombination()
 			
 			principalSquad = PrincipleSquad ()
@@ -151,7 +150,7 @@ class Tournament(object):
 		(stage, isGroup) = self.stillInGame()
 
 		while  stage != None:
-			
+                        self.currentGameID = None
 			if not self.waitForNextGame():
 				return
 			

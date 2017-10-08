@@ -7,14 +7,14 @@ class ModuleCache (object):
     def __init__(self, cacheDir, cfClassName):
         self.modules = {}
         self.costFunctions = {}
-        print 'Listing directory' + cacheDir 
+        
         for fname in os.listdir(cacheDir):
             mname, ext = os.path.splitext(fname)
             if ext != '.py':
                 continue
-            print 'Processing ' + fname
+            
             p = os.path.join(cacheDir, fname)
-            m = self.importFromURI(p)
+            m = ModuleCache.importFromURI(p)
             self.modules[mname] = m
 
         for name, mod in self.modules.iteritems():
@@ -30,9 +30,9 @@ class ModuleCache (object):
             return None
         return costFunction
     
-    def importFromURI(self, uri):
-        mod = None
-        uri = os.path.join(GlobalData.AppDir, uri)      
+    @staticmethod
+    def importFromURI(uri):
+        mod = None      
         path, fname = os.path.split(uri)
         mname, ext = os.path.splitext(fname)
 

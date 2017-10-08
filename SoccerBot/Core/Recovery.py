@@ -206,8 +206,6 @@ class Positions(object):
 			sumAdded  = 0
 			valToAdd = 10 if state.Stamina >= 10 else state.Stamina
 
-			print playerID
-
 			if sumAdded + valToAdd > maxSpend:
 				valToAdd = maxSpend - sumAdded
 			
@@ -242,9 +240,8 @@ def  healPlayers():
 
 		statusReq.send(state)
 	except Exception as ex:
-		print('Somehing happened ' + str(ex))
+		print('Something happened ' + str(ex))
 
-	print('------------------recovery is done ------------------------')
 
 def  healSquadPlayers( players):
 	try:
@@ -262,5 +259,5 @@ def  healSquadPlayers( players):
 	except Exception as ex:
 		print('Something happened ' + str(ex))
 
-	print('------------------recovery is done ------------------------')
+	
 

@@ -17,8 +17,8 @@ class GameSession(object):
                  'userresl' : '1366x768',
                 'useragent' : 'Mozilla 5.0',
                 'useragent' : 'Mozilla 5.0',
-                'auth_name': GlobalData.LoginUser,
-                'auth_pass': GlobalData.LoginPassword,
+                'auth_name': GlobalData.UserCfg.UserName,
+                'auth_pass': GlobalData.UserCfg.Password,
                 'auth_pass1': '',
                 'userdate' : '12',
                 'usertime' :  '62609'
@@ -26,20 +26,32 @@ class GameSession(object):
         #self-register 
         self.session = requests.Session()
         GlobalData.CurrentSession = self
-        
-        self.logger.info('Trying to login with UserID = %s, Password = %s' 
-                         % (GlobalData.LoginUser, GlobalData.LoginPassword))
-        
         GlobalData.CurrentSession.post(GlobalData.Site, data=logon)    
 
-        if GlobalData.UserCfg == None:
-            ID = self.findUserID()            
-            GlobalData.UserCfg = UserConfig(GlobalData.LoginUser,ID)
-            GlobalData.UserCfg.save()
-
-
+        if GlobalData.UserCfg.UserID == None:
+            GlobalData.UserCfg.UserID = findUserID
+    
         self.logger.info('Successfully logged in as %s(refID) ' % GlobalData.UserCfg.UserID )
-        
+
+    def initSessionFast(self):
+       
+        logon = {
+                'step' : '1',
+                'login' : '1',
+                 'userresl' : '1366x768',
+                'useragent' : 'Mozilla 5.0',
+                'useragent' : 'Mozilla 5.0',
+                'auth_name': GlobalData.UserCfg.UserName,
+                'auth_pass': GlobalData.UserCfg.Password,
+                'auth_pass1': '',
+                'userdate' : '12',
+                'usertime' :  '62609'
+            }       
+        GlobalData.CurrentSession.post(GlobalData.Site, data=logon)    
+
+        if GlobalData.UserCfg.UserID == None:
+            GlobalData.UserCfg.UserID = findUserID
+   
         
     def findUserID(self):
         soup = GlobalData.CurrentSession.getContent(GlobalData.Site + '/index.php' )
